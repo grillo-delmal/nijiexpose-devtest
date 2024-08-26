@@ -22,7 +22,7 @@
     </screenshot>
   </screenshots>
   <releases>
-    <release version="nightly">
+    <release version="0.0.0+build.1.9c3054a.20240826T224211Z" date="2024-08-26">
       <url>https://github.com/nijigenerate/nijiexpose/</url>
       <description>
          <p>This is a development test build of nijiexpose!</p>

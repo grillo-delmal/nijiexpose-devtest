@@ -1,0 +1,4 @@
+type: git
+url: https://github.com/nijigenerate/nijiexpose.git
+commit: 9c3054abc5a2611646a61dcfbfb7231a061da119
+disable-shallow-clone: true
