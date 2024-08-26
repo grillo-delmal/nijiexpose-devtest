@@ -1,0 +1,97 @@
+id: io.github.grillo_delmal.nijiexpose
+runtime: org.freedesktop.Platform
+runtime-version: '23.08'
+sdk: org.freedesktop.Sdk
+sdk-extensions:
+  - org.freedesktop.Sdk.Extension.ldc
+  - org.freedesktop.Sdk.Extension.llvm16
+command: nijiexpose
+finish-args:
+  - --device=dri          # OpenGL rendering (change for all if webcam support implemented)
+  - --socket=fallback-x11
+  - --share=ipc
+  - --share=network       # Needed to communicate with external trackers
+  - --socket=wayland
+
+modules:
+
+  - name: nijiexpose-source
+    buildsystem: simple
+    build-commands:
+      # Apply lib patches
+      - bash ./patches/apply_patches.sh .flatpak-dub .
+      # Build translations
+      - mkdir otl/ ;
+        chmod +x gentl.sh;
+        if [ $(find tl/ -name "*.po" 2>/dev/null | wc -l) == 0 ] ;
+        then
+          echo "No translations, skipping...";
+        else 
+          ./gentl.sh;
+          mv out/* otl/ ;
+        fi
+      - jq 'map(.path = (["D:/a/nijiexpose-nightly/nijiexpose-nightly"] + (.path | split("/"))[-4:] | join("/")) )' <<<$(<.dub/packages/local-packages.json) > .dub/packages/local-packages.win.json
+      - jq 'map(.path = (["/Users/runner/work/nijiexpose-nightly/nijiexpose-nightly"] + (.path | split("/"))[-4:] | join("/")) )' <<<$(<.dub/packages/local-packages.json) > .dub/packages/local-packages.mac.json
+      - jq 'map(.path = (["/home/runner/work/nijiexpose-nightly/nijiexpose-nightly"] + (.path | split("/"))[-4:] | join("/")) )' <<<$(<.dub/packages/local-packages.json) > .dub/packages/local-packages.linux.json
+      # Clean up
+      - rm -rf $(find .flatpak-dub/ -maxdepth 1 -iname "i2d-imgui*")/.git/modules
+      - rm -rf $(find .flatpak-dub/ -maxdepth 1 -iname "i2d-imgui*")/deps/SDL/test
+
+    sources:
+      - dub-add-local-sources.json
+      - latest-nijiexpose.yml
+      - type: dir
+        path: patches/
+        dest: patches/
+
+
+  # --- nijiexpose ---
+  - name: nijiexpose
+    buildsystem: simple
+    build-options:
+      append-path: /usr/lib/sdk/ldc/bin
+      env:
+        DFLAGS: '-g --d-debug'
+    build-commands:
+      # Apply lib patches
+      - bash ./patches/apply_patches.sh .flatpak-dub .
+      # Build translations
+      - mkdir otl/ ;
+        chmod +x gentl.sh;
+        if [ $(find tl/ -name "*.po" 2>/dev/null | wc -l) == 0 ] ;
+        then
+          echo "No translations, skipping...";
+        else 
+          ./gentl.sh;
+          mv out/* otl/ ;
+        fi
+      # Clean up
+      - rm -rf $(find .flatpak-dub/ -maxdepth 1 -iname "i2d-imgui*")/.git/modules
+      - rm -rf $(find .flatpak-dub/ -maxdepth 1 -iname "i2d-imgui*")/deps/SDL/test
+      # Build
+      - dub add-path .flatpak-dub;
+        dub add-local .flatpak-dub/semver/*/semver;
+        dub add-local .flatpak-dub/gitver/*/gitver;
+        dub build --skip-registry=all --config=meta;
+        dub build --skip-registry=all --build=release --config=linux-nightly --debug=InExperimental
+      - install -Dm 755 ./out/nijiexpose /app/bin/nijiexpose
+      - install -Dm 755 ./out/cimgui.so /app/bin/cimgui.so
+
+      # Uncomment when session translations are actually a thing. 
+      #- install -Dm644 ./otl/*.mo /app/bin
+
+      # Metadata
+      - install -Dm644 io.github.grillo_delmal.nijiexpose.metainfo.xml /app/share/metainfo/io.github.grillo_delmal.nijiexpose.metainfo.xml
+      - install -Dm644 nijiexpose.desktop /app/share/applications/io.github.grillo_delmal.nijiexpose.desktop
+      - install -Dm644 ./res/icon_x256.png /app/share/icons/hicolor/256x256/apps/io.github.grillo_delmal.nijiexpose.png
+    sources:
+      - dub-add-local-sources.json
+      - latest-nijiexpose.yml
+      - type: dir
+        path: patches/
+        dest: patches/
+      - type: file
+        path: nijiexpose.desktop
+      - type: file
+        path: io.github.grillo_delmal.nijiexpose.metainfo.xml
+
