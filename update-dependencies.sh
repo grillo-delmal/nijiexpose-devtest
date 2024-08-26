@@ -110,7 +110,7 @@ fi
 
 # Make sure to apply patches beforehand
 popd
-bash ./patches/apply_patches.sh dep.build/deps dep.build/nijiexpose
+bash ./scripts/apply_local_patches.sh dep.build/deps dep.build/nijiexpose
 pushd dep.build
 
 echo "### Build Stage"
